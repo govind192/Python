@@ -1,0 +1,455 @@
+ ======================================================
+Basic Document Read it First = 10 Mins
+# 1. You will have two VMs with CLI as net4.example.com & net5.example.com (Minimal
+Server)
+# 2. One of the VM’s password need to reset that is net5.example.com
+# 2. You need to break "root" password and then password as “erootent” on
+net5.example.com
+# 3. You need to set "hostname" according to Examiner.
+# 4. You Need to set static IP address/Netmask/Gateway/DNS according to Examiner.
+* all the user will have password "erootent" till the time not mentioned specifically in the question
+
+Container Url = registry.redhat.io
+username= admin
+password= stafen (whatever given in the exam)
+
+
+======================================================
+accept Rules Agreement and
+than submit.
+======================================================
+Note: you will get 3 disks
+1. /dev/vda -à OS Installed
+2. /dev/vdb -à To create partition (Pre-created partitions available)
+3. /dev/vdc -à for vdo, Stratis pool,filesystem and snapshots
+======================================================
+
+Your Exam is begin from here ......!
+.......................................Perform Task on net4.example.com machine......................................
+Question 1: Configure TCP/IP and "hostname" as following:
+IP ADDRESS = 172.25.X.11/24
+NETMASK = 255.255.255.0
+GATEWAY = 172.25.X.254
+DNS = 172.25.250.254
+Hostname = serverX.example.com
+Ans:-->
+[root@red.example.com]#nmtui (use this command to network configuration)
+# DNS Issue Resolve
+# hostnamectl set-hostname server1.example.com
+vim /etc/hostname
+[root@red.example.com]#vim /etc/resolv.conf
+search example.com <Domain name>
+nameserver <DNS IP>
+
+# ping 172.25.5.254
+
+# systemctl status NetworkManager
+
+Q.2 Configure Your red VM repository installed the packages distribution is available via
+YUM:
+baseos url = http://content.example.com/rhel8.2/x86_64/dvd/BaseOs
+appstream url= http://content.example.com/rhel8.2/x86_64/dvd/Appstream
+Ans:-->
+[root@red.example.com]#cd /etc/yum.repos.d
+[root@red.example.com]#vim server.repo
+[AppStream]
+name=yum
+baseurl=http://content.example.com/rhel8.0/x86_64/dvd/Appstream
+gpgcheck=0
+enabled=1
+
+[BaseOS]
+name=base yum
+baseurl=http://content.example.com/rhel8.0/x86_64/dvd/BaseOs
+gpgcheck=0
+enabled=1
+[root@red.example.com]#yum repolist
+[root@red.example.com]#yum install vim
+
+Q.3 SELINUX PORT
+- Your system httpd service having some issues service is not running on port 82.
+- In your system httpd service have some files in /var/www/html (do not change or alter
+files)
+- solve the port issue.
+
+Ans:- semanage port -a|grep 82 = if semanage port -a|grep http will not work.
+
+# firewall-cmd --list-all
+# firewall-cmd --permanenet --add-port=82/tcp
+# firewall-cmd --reload
+# firewall-cmd --list-all
+# semanage port -a|grep http
+http_port_t 
+# semanage port -a -t http_port_t -p tcp 82
+
+
+Q.4 Create the following users, groups, and group membership:
+ - A group named sysadm.
+ - A user "harry" who belongs to sysadm as a secondary group.
+ - A user "natasha" who belongs to sysadm as a secondary group.
+ - A user "sarah" who does not have access to an interactive shell & who is not a
+member of sysadm group.
+ - "harry", "natasha", and "sarah" should all have the password of Password.
+Ans
+# Useradd harry
+# useradd natasha
+# useradd -s /sbin/nologin sarah
+# groupadd sysadm
+# usermod -G sysadm harry
+
+# usermod -G syadam natasha
+
+Q.5 create a collaborative directory /shared/sysadm with the following characteristics:
+ - Group ownership of /shared/sysadm is sysadm.
+ - The directory should be readable, writable, and accessible to member of sysadm, but
+not to any other user.
+ (It is understood that root has access to all files and directories on the system.)
+ - Files created in /shared/sysadm automatically have group ownership set to the sysadm
+group.
+
+Ans
+# mkdir -p /shared/sysadm
+
+# chgrp sysadm /shared/sysadm
+
+# chmod 2770 /shared/sysadm
+
+Q.6 Set The Cron Job for the user "Natasha" that should runs daily every 1 minutes local
+time and executes "Ex200 Testing" with logger.
+
+Ans
+
+# which logger
+# which echo
+
+# crontab -e -u natasha
+
+*/1 * * * * /usr/bin/logger "Ex200 Testing"
+:wq!
+
+# systemctl restart crond
+# systemctl enable crond
+# crontab -l -u natasha
+# cat /var/log/cron
+
+Q.7 Configure autofs to automount the home directories of ldapuser5 user. Note the
+following:
+ - ldapuser5 home directory is exported via NFS, which is available on
+classroom.example.com (172.25.254.254) and your NFS-exports directory is /home/guests for
+ldapuser5,
+- ldapuser5's home directory is classroom.example.com:/home/guests/ldapuser5
+ - ldapuserX's home directory should be automounted autofs service.
+- home directories must be writable by their users.
+
+Ans:-->
+
+## install autofs rpm pkg ##
+[root@red.example.com]#rpm -qa autofs
+[root@red.example.com]#yum install autofs
+[root@red.example.com]#vim /etc/auto.master
+/home/guests /etc/auto.misc
+[root@red.example.com]#vim /etc/auto.misc
+ldapuser5 -fstype=nfs,rw clssroom.example.com:/home/guests/ldapuser5
+# systemctl restart autofs
+# systemctl enable autofs
+[root@red.example.com]#su - ldapuser5
+
+Q 8 Create a tar archive of "/etc/" Directory with .bzip2 extension. Tar archive named
+"myetcbackup.tar" should be place in "/root/" Directory.
+Ans
+# tar -cvjf myetcbackup.tar.bz2 /etc
+
+zip = -z = gz
+gzip= -j = bz2
+xz  = -J = xz
+
+Q.9 Copy the file /etc/fstab to /var/tmp. Configure the permissions of /var/tmp/fstab so
+that:
+ - the file /var/tmp/fstab is owned by the root user
+ - the file /var/tmp/fstab belong to the group root
+ - the file /var/tmp/fstab should not be execubable by anyone
+ - the user "natasha" is able to read and write /var/tmp/fstab
+ - the user "harry" can neither write nor read /var/tmp/fstab
+ - all other users (current or future) have the ability to read /var/tmp/fstab
+
+Ans-
+
+1. # cp /etc/fstab /var/tmp
+2. # cd /var/tmp
+   # setfacl -m u:natasha:rw- fstab
+   # setfacl -m u:harry:--- fstab
+   # getfacl fstab
+
+
+Q.10 Configure your system to syncronize the time from form "classroom.example.com".
+pool only
+
+# vi /etc/chrony.conf
+pool classroom.example.com iburst
+:wq!
+# systemctl restart chronyd
+# systemctl enable chronyd
+
+# chronyc sources -v
+
+Q.11 Find all files which is created by a user "natasha" in to this system and
+copy it into a "/root/natashafiles" directory.
+
+# mkdir -p /root/natashafiles
+
+# find / -user natasha -type f -exec cp -rvp {} /root/natashafile/ \;
+
+
+Q.12 Find all strings "ich" from "/usr/share/dict/words" file and copy that strings in a
+/root/lines file.
+
+# grep -o ich /usr/share/dict/words > /root/lines
+
+Q.13 Create a user "unilao" with UID "2334" with password as "ablerate".
+
+Ans # useradd -u 2334 unilao 
+    # passwd unilao
+
+Q.14 
+1. run conatiner from the image registry.redhat.io/rhel8/httpd-24:1-112(image name)
+2. Run it as a service 
+3. keep container name container-logserver
+4. login in user minalo
+
+container autostart, container name= container-logserver-cert , image=rsyslog
+ANS:-->
+# yum module install container-tools -y
+
+# ssh minalo@localhost
+password *****
+
+minalo $ podman login registry.redhat.io
+username = admin
+password = *****
+login successfull
+
+$ podman search rsyslog
+
+$ podman pull registry.redhat.io/rhel8/httpd-24:1-112
+$ podman images
+$ podman container list
+$ mkdir -p ~/.config/systemd/user
+$ cd ~/.config/systemd/user
+$ podman run -d containername
+$ podman ps
+
+$ podman generate systemd --name logserver --file
+$ systemctl --user deamon-reload
+$ systemctl --user enable container-logserver
+
+$ podman ps
+
+
+Q 16 Create a script with name myscript.sh in /mnt directory which will find those files in /usr where size is more thean 30 kb and less than 50 kb and  store it in /root/myfile
+
+Ans
+vim myscript.sh
+#!/bin/bash
+mkdir /root/myfile
+find /usr -type f -size +30k -a -size -50k -exec cp "{}" /root/myfile/ \;
+:wq!
+
+# chmod u+x myscript.sh
+# sh myscript.sh
+
+ # X200 ="xyz"
+
+# clear = c
+
+Varient
+
+Create a Command which will run clear command
+or print a message on screen.
+vim ~/.bashrc
+source ~/.bashrc
+
+
+Q15:--> persistance storage
+Make staorage persitent in jornald
+
+
+# Vi /etc/systemd/journald.conf
+storage=persistent
+:wq!
+# Systemctl restart systemd-journald
+# systemctl enable systemd-journald
+
+# cd /usr/share/journal
+
+
+......................................Do task on blue machine...................................
+Question 1: Break root password and Set "root" password to "erootent"
+Reboot blue.example.com
+ Use the cursor keys to highlight the default boot-loader entry.
+ Press e to edit the current entry.
+ Use the cursor keys to navigate to the line that starts with linux.
+ Press End to move the cursor to the end of the line.
+write rd.break
+press ctrl+x
+switch-root:/# mount -o remount,rw /sysroot
+             #  chroot /sysroot
+# passwd root
+# touch /.autorelabel
+
+# exit
+# exit
+
+Q.2 Configure Your blue VM repository installed the packages distribution is available via
+YUM:
+ baseos url = http://content.example.com/rhel8.2/x86_64/dvd/BaseOs
+appstream url= http://content.example.com/rhel8.2/x86_64/dvd/Appstream
+
+
+LVM = Logical Volume Manager = It will be used for creating a resizable partitions into the Disk.
+
+/dev/vda = OS
+/dev/vdb = Swap, LVM = partitions
+
+/dev/vdc = VDO
+Partition = 8e
+physical Volume 
+Vg 
+
+Q.3 Create an LVM name datastore from database volume group. Note the following:
+ - PE size should be 8MB
+ - LVM size should be 50 extents
+- Format with "vfat" file system and mount it permanent under /mnt/lvm.
+
+# you have to create partition in /dev/vdb only
+# create a partition of 500M with id 8e
+# pvcreate /dev/vdb5
+# vgcreate -s 8MB database /dev/vdb5
+# vgdisplay
+# lvcreate -l 50 -n datastore database
+# lvdisplay
+  /dev/database/datastore
+
+# mkfs.vfat /dev/database/datastore
+
+# mkdir -p /mnt/lvm
+# mount /dev/database/datastore /mnt/lvm
+
+vim /etc/fstab
+
+/dev/database/datastore     /mnt/lvm      vfat   defaults    0 0
+:wq!
+# df -H
+
+Q.4 Create a swap partition of 512M MB and make it available permanent.
+
+# fdisk /dev/vdb
+# create partition with id 82 of size 512 MB
+# mkswap /dev/vdb6
+# vi /etc/fstab
+/dev/vdb6      swap       swap      defaults      0  0
+
+# swapon -a
+# swapon -s
+
+
+Q.5 Resize your logical volume lv1, it should be approx 300MB( note -> only size accepted
+from 290mb to 310mb).
+
+# lvdisplay
+  /dev/vg0/lv1  200 MB
+
+# lvresize -r /dev/vg0/lv1 -L 300M
+
+Q.6a Configure Stratis as following
+
+        - create stratis pool
+
+        - create filesystem
+
+        - take snapshot
+
+ Ans:
+
+# yum -y install stratis-cli stratisd
+# systemctl enable --now stratisd
+# stratis pool create pool1 /dev/vdc
+# stratis pool list
+# stratis pool add-data pool1 /dev/vdc
+# stratis blockdev list pool1
+
+
+# stratis filesystem create pool1 filesystem1
+
+# stratis filesystem snapshot pool1 filesystem1 snapshot1
+
+# stratis filesystem list
+
+# mkdir /fs1
+
+# lsblk --output=UUID /stratis/pool1/filesystem1
+xxxxx.yyyyy
+
+# vim /etc/fstab
+
+UUID=xxxxx.yyyy	/fs1	xfs	defaults,x-systemd.requires=stratisd.service 0 0
+
+:wq
+
+Q.6b Configure VDO file system , use device /dev/vdc , format it with xfs file system and vdo name is vdouser
+make persistent mount under /database. Logical will be = 2G
+
+# yum install vdo -y
+# vdo create --name=vdouser --device=/dev/vdc --vdoLogicalSize=2G
+# vdo list
+# mkfs.xfs /dev/mapper/vdouser
+# udevadm settle
+# mkdir /database
+# mount /dev/mapper/vdouser /database
+# vi /etc/fstab
+/dev/mapper/vdouser  /database  xfs  defaults,x-systemd.requires=vdo.service   0 0
+:wq!
+
+# mount -a
+# vodstats --human-readable
+
+
+Q 7 . Configure recommended tuned profile
+
+# systemctl status tuned
+
+# tuned-adm active
+
+# tuned-adm recommend
+virtual-host
+
+# tuned-adm profile virtual-host
+
+# tuned-adm active
+
+
+1. run container detach mode. as a systemd service
+      2. mount a volume to the container  /home/test/container_journal
+      3. journalctl --->   storage persistent. /var/log/journal
+      4. cp -rvf /var/log/journal /home/test/container_journal
+
+
+
+        #yum module install  container-tools
+        #setsebool -P container_manage_cgroup on
+        #ssh test@localhost
+        $podman login registry.lab.example.com
+        $podman search rsyslog
+        $podman pull registry.lab.example.com/rhel/rsyslog
+        $mkdir /home/test/container_journal
+        $podman run -d  -v /home/test/container_journal:/var/log/journal:Z  --name logserver rsyslog
+        $podman ps
+        $mkdir -p ~/.config/systemd/user
+	$cd ~/.config/systemd/user
+	$podman generate systemd --name logserver --files  (mendatry)
+	$systemctl --user daemon-reload
+	$podman stop logserver
+	$systemctl --user start container-logserver 
+	$systemctl --user enable container-logserver
+	$podman ps
+	$loginctl enable-linger
+	$loginctl show-user test
